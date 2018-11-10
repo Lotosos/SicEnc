@@ -1,0 +1,65 @@
+var Encomenda = require('../models/encomendaModel');
+var ProdutoItem = require('../models/produtoItemModel');
+
+exports.findAll = function (req, res, next) {
+    Encomenda.find({}).then(function (itens) {
+        res.send(itens);
+    }).catch(next);
+};
+
+exports.findOne = function (req, res, next) {
+    Encomenda.findById({ _id: req.params.id }).then(function (encomenda) {
+        res.send(encomenda);
+    }).catch(next);
+};
+
+exports.findItensByEncomendaId = function (req, res, next) {
+    Encomenda.findById({ _id: req.params.id }).then(function (encomenda) {
+        res.send(encomenda);
+    }).catch(next);
+};
+
+exports.findItensByEncomendaItemId = function (req, res, next) {
+    Encomenda.findById({ _id: req.params.id }).then(function (encomenda) {
+        return encomenda.itens;
+    }).then(function (itens) {
+        /*itens.findById({_id: req.params.iditem}).then()(function (item) {
+            res.send(item);
+        });*/
+        var auxtemp = req.params.iditem;
+        var aux = itens.toString().includes(auxtemp);
+        if(aux){
+            ProdutoItem.findById({_id: req.params.iditem}).then(function(item){
+                res.send(item);
+            })
+        } else {
+            res.status(404).send('NOT_FOUND - Não existe esse ID de Item na Encomenda');
+        }
+    }).catch(next);
+
+ /*   aux.foreach(function (item) {
+        if (item == req.params.iditem) {
+            ProdutoItem.findById({ _id: req.params.iditem }).then(function (item) {
+                res.send(item);
+            }).catch(next);
+        }
+    });*/
+};
+
+exports.createEncomenda = function (req, res, next) {
+    Encomenda.create(req.body).then(function (encomenda) {
+        res.send(encomenda);
+    }).catch(next);
+};
+
+exports.updateEncomenda = function (req, res, next) {
+    Encomenda.create(req.body).then(function (encomenda) {
+        res.send(encomenda);
+    }).catch(next);
+};
+
+exports.deleteEncomenda = function (req, res, next) {
+    Encomenda.findByIdAndRemove({ _id: req.params.id }).then(function (encomenda) {
+        res.send(encomenda);
+    }).catch(next);
+}
