@@ -28,22 +28,14 @@ exports.findItensByEncomendaItemId = function (req, res, next) {
         });*/
         var auxtemp = req.params.iditem;
         var aux = itens.toString().includes(auxtemp);
-        if(aux){
-            ProdutoItem.findById({_id: req.params.iditem}).then(function(item){
+        if (aux) {
+            ProdutoItem.findById({ _id: req.params.iditem }).then(function (item) {
                 res.send(item);
             })
         } else {
             res.status(404).send('NOT_FOUND - Não existe esse ID de Item na Encomenda');
         }
     }).catch(next);
-
- /*   aux.foreach(function (item) {
-        if (item == req.params.iditem) {
-            ProdutoItem.findById({ _id: req.params.iditem }).then(function (item) {
-                res.send(item);
-            }).catch(next);
-        }
-    });*/
 };
 
 exports.createEncomenda = function (req, res, next) {
@@ -53,10 +45,10 @@ exports.createEncomenda = function (req, res, next) {
 };
 
 exports.updateEncomenda = function (req, res, next) {
-    Encomenda.create(req.body).then(function (encomenda) {
-        res.send(encomenda);
-    }).catch(next);
-};
+        Encomenda.findByIdAndUpdate({_id: req.params.id}, req.body, {new: true}).then(function (encomenda) {
+            res.send(encomenda);
+        }).catch(next);
+    };
 
 exports.deleteEncomenda = function (req, res, next) {
     Encomenda.findByIdAndRemove({ _id: req.params.id }).then(function (encomenda) {
