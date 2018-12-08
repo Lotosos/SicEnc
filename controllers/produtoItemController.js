@@ -1,78 +1,74 @@
 var mongoose = require('mongoose');
 var ProdutoItem = require('../models/produtoItemModel');
-var async = require("async");
-var Client = require('node-rest-client').Client;
-var client = new Client();
-//var ProdutoItem = mongoose.model(ProdutoItem);
-var baseUrl = "https://sic20181106055047.azurewebsites.net/api/";
-var produtoUrl = baseUrl + "produto/"
+var ProdRep = require('../repositories/produtoItemRepository');
+var ProdServ = require('../services/produtoItemService');
+const Promise = require('bluebird');
+var validacoes = [ProdServ.itemValidator, 
+    ProdServ.filhosValidator,
+    ProdServ.validarFilhosObrigatorios];
+
+var validacoesUpdate = [ProdServ.itemValidator, 
+        ProdServ.filhosValidator,
+        ProdServ.validarFilhosObrigatoriosUpdate]
 
 exports.findAll = function(req, res, next){
-    ProdutoItem.find({}).then(function(items){
+    ProdRep.findAll().then(function(items){
         res.send(items);
     });
 };
-
+/*
 exports.createItem = function(req, res, next){
-    var item = new ProdutoItem({
-        idProduto : req.body.idProduto,
-        altura : req.body.altura,
-        largura : req.body.largura,
-        profundidade: req.body.profundidade,
-        idMaterial: req.body.idMaterial,
-        idAcabamento: req.body.idAcabamento,
-        items:req.body.items
-    });
-    itemValidator(item).then(function(value){ ProdutoItem.create(req.body).then(function(item){
-            res.send(item);
-    }
-       )}).catch(next);
+    var item = ProdServ.createModelFromBody(req.body);
 
-    
+    ProdutoItem.populate(item, 'filhos', function(err){
+        /*ProdServ.itemValidator(item)
+        .then(ProdServ.filhosValidator(item))
+        //.then(ProdServ.validarFilhosObrigatorios(item))*
+        Promise.each(validacoes, function(validacao){
+            return validacao(item);
+        })
+        .then(ProdRep.createProdutoItem(req.body).then(function(itemP){
+            console.log(itemP);
+            res.send(itemP);           
+        }).catch(next))
+        .catch(next);
+            
+    });
+};*/
+exports.createItem = function(req, res, next){
+    var item = ProdServ.createModelFromBody(req.body);
+
+    ProdutoItem.populate(item, 'filhos', function(err){
+        /*ProdServ.itemValidator(item)
+        .then(ProdServ.filhosValidator(item))
+        //.then(ProdServ.validarFilhosObrigatorios(item))*/
+        Promise.each(validacoes, function(validacao){
+            return validacao(item, req, res, next);
+        }).catch(next)
+            
+    });
 };
 
 exports.deleteProdutoItem = function(req, res, next){
-    ProdutoItem.findByIdAndRemove({_id: req.params.id}).then(function(item){
+    ProdRep.deleteProdutoItemById(req.params.id).then(function(item){
+        if(item == null) throw new Error("Produto nao existe");
         res.send(item);
     }).catch(next);
 }
 
 exports.findbyId = function(req, res, next) {
-    ProdutoItem.findById({_id: req.params.id}).then(function(item){
+    ProdRep.findProdutoItemById(req.params.id).then(function(item){
+        if(item == null) throw new Error("Produto nao existe");
         res.send(item);
     }).catch(next);
 }
 
-function itemValidator(value){
-    return new  Promise(function(resolve, reject){
-            
-        var urlaux = baseUrl + "produto/validar/" + value.idProduto 
-                + "/altura=" + value.altura
-                + "&largura=" + value.largura
-                + "&profundidade=" + value.profundidade
-                + "&idMaterial=" + value.idMaterial
-                + "&idAcabamento=" + value.idAcabamento;
+exports.updateProdutoItem = function (req, res, next) {
+    var item = ProdServ.createModelFromBody(req.body);
 
-                console.log(urlaux);
-
-        client.get(urlaux, function(data, response){
-            if(response.statusCode == 200){
-                resolve(value);
-            }else{
-                //resolve(false);
-                reject(new Error('produto invalido'));
-            }
-        });
+    ProdutoItem.populate(item, 'filhos', function(err){
+        Promise.each(validacoesUpdate, function(validacao){
+            return validacao(item, req, res, next);
+        }).catch(next);
     });
 }
-/*
-function filhosValidator(value) {
-    var filhos = value.filhos;
-    var aux;
-    for(var i = 0, size = filhos.length; i < size ; i++){
-        aux[i] = ProdutoItem.findById({_id: req.params.id}).then(function(item){
-            
-        }).catch(next);
-    }
-}
-*/
